@@ -1,0 +1,17 @@
+[
+    {
+        "id": "05ec223d92f4",
+        "nom": "Fred &amp; Elise",
+        "sejour": "Juillet 2026",
+        "note": 5,
+        "commentaire": "2 semaines c&#039;est trop court. J ai jardiné, préparé la villa pour les prochains visiteurs, ajouté une douche solaire dans le jardin... mais aussi retour sur nos plus belle plage et une ballade en jet de 2h!!",
+        "photos": [
+            "20260802_170944_f9d4357db51d.jpg",
+            "20260802_170944_bbd702a79ca3.jpg",
+            "20260802_170944_c62ec689e911.jpg",
+            "20260802_170944_4f4dacb49ffe.jpg"
+        ],
+        "date": "2026-08-02T17:09:44+02:00",
+        "approuve": true
+    }
+]

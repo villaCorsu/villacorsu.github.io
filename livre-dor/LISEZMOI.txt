@@ -1,0 +1,119 @@
+LIVRE D'OR — VILLA CORSU
+========================
+
+Ce module ajoute une page "Livre d'or" à votre site pour que vos locataires
+puissent laisser un avis et des photos souvenirs. Il fonctionne uniquement
+avec des fichiers PHP + JSON (pas besoin de base de données MySQL).
+
+CONTENU DU DOSSIER
+-------------------
+- avis.php        → la page publique (formulaire + galerie des avis)
+- moderate.php    → la page d'administration pour valider/refuser les avis
+- config.php      → réglages (mot de passe admin, limites de taille…)
+- functions.php   → fonctions techniques (ne pas modifier)
+- data/avis.json  → base de données des avis (créée vide)
+- uploads/        → dossier où seront stockées les photos envoyées
+
+INSTALLATION SUR FREE (hébergement perso)
+------------------------------------------
+1. Connectez-vous en FTP à votre hébergement Free (FileZilla, ou le
+   gestionnaire de fichiers dans votre espace abonné Free).
+
+2. Copiez TOUT le dossier "livre-dor" à la racine de votre site, à côté
+   de votre fichier index.html actuel (celui de La Villa Corsu).
+   → Vous devez donc avoir, à la racine :
+       index.html
+       gfx/...
+       livre-dor/avis.php
+       livre-dor/moderate.php
+       livre-dor/data/avis.json
+       livre-dor/uploads/
+       ... etc.
+
+   Si vous préférez que la page s'appelle simplement "avis.php" à la
+   racine du site (adresse plus courte, ex: villacorsu.free.fr/avis.php),
+   déplacez tous les fichiers du dossier "livre-dor" directement à la
+   racine du site (au même niveau que index.html), et adaptez le lien
+   "← Guide" dans avis.php si besoin (il pointe déjà vers index.html).
+
+3. Droits d'écriture (permissions) :
+   Le serveur doit pouvoir écrire dans deux endroits : data/avis.json et
+   uploads/. Sur Free, il n'est SOUVENT PAS NÉCESSAIRE de changer les
+   permissions à la main : PHP s'exécute avec votre propre compte, donc
+   les fichiers que vous venez d'uploader sont déjà à vous et déjà
+   accessibles en écriture.
+
+   Si FileZilla refuse le CHMOD ("Permission denied") : c'est normal,
+   Free bloque souvent la commande SITE CHMOD par FTP pour des raisons
+   de sécurité. Ne bloquez pas là-dessus — passez directement à l'étape
+   suivante et testez.
+
+   Pour vérifier que tout fonctionne réellement, ouvrez dans votre
+   navigateur :
+       villacorsu.free.fr/livre-dor/verif-permissions.php
+   Ce script teste l'écriture dans data/ et uploads/, et tente une
+   correction automatique si besoin (PHP peut souvent ajuster ses
+   propres permissions même quand FileZilla n'y arrive pas).
+   → Supprimez ce fichier une fois la vérification terminée.
+
+4. Modifiez le mot de passe d'administration :
+   Ouvrez le fichier config.php et changez la ligne :
+       define('ADMIN_PASSWORD', 'CorsuAvis2026!');
+   Remplacez 'CorsuAvis2026!' par un mot de passe de votre choix, puis
+   ré-uploadez le fichier.
+
+5. Ajoutez un lien vers la nouvelle page depuis votre guide (index.html),
+   par exemple dans le pied de page ou la navigation :
+       <a href="livre-dor/avis.php">📖 Livre d'or</a>
+
+UTILISATION AU QUOTIDIEN
+-------------------------
+- Vos locataires vont sur villacorsu.free.fr/livre-dor/avis.php,
+  remplissent le formulaire (nom, note, message, photos) et envoient.
+- Leur avis est enregistré mais N'APPARAÎT PAS encore sur la page
+  publique — il est "en attente de modération" (pour éviter le spam).
+- Vous allez sur villacorsu.free.fr/livre-dor/moderate.php, vous entrez
+  votre mot de passe, et vous cliquez sur "✓ Publier" pour afficher
+  l'avis, ou "✕ Refuser" pour le supprimer définitivement.
+- Une fois publié, l'avis apparaît avec ses photos sur avis.php.
+
+ERREUR "Parse error: syntax error, unexpected '['"
+----------------------------------------------------
+Si vous voyez cette erreur en ouvrant avis.php, c'est que votre compte
+Free "Pages Perso" utilise encore une très ancienne version de PHP par
+défaut (certains vieux comptes tournent encore sous PHP 5.1, voire 4 !).
+
+Un fichier .htaccess est inclus dans ce dossier pour forcer une version
+plus récente (PHP 5.6) — c'est la méthode historique utilisée par les
+utilisateurs de Free dans ce cas. Uploadez-le simplement avec les autres
+fichiers (il est cacheté, donc invisible dans l'explorateur Windows/Mac,
+mais bien visible dans FileZilla).
+
+⚠️ Si vous avez déjà un fichier .htaccess à la racine de votre site (pour
+autre chose), ne le remplacez pas : ouvrez-le et ajoutez-y simplement les
+lignes suivantes à la fin :
+    <IfDefine Free>
+    php56 1
+    </IfDefine>
+
+Après l'upload, rechargez la page. Si l'erreur persiste, votre compte est
+peut-être hébergé sur un serveur Free qui ne propose pas cette bêta PHP 5.6
+— dans ce cas, contactez le support Free (ou le forum Usenet
+proxad.free.services.pagesperso) pour demander une migration de compte
+vers un serveur plus récent.
+
+SÉCURITÉ
+--------
+- Le formulaire inclut une protection anti-robot simple (question de
+  calcul + champ invisible).
+- Les photos sont vérifiées (type et taille) et automatiquement
+  redimensionnées à 1600px de large maximum si le serveur le permet,
+  pour économiser de l'espace disque.
+- Le dossier "uploads" interdit l'exécution de scripts.
+- Pensez à changer le mot de passe par défaut avant la mise en ligne !
+
+PERSONNALISATION
+----------------
+Les couleurs, polices et styles reprennent exactement la charte de votre
+page d'accueil (Playfair Display / Outfit, tons beige et or). Vous
+pouvez ajuster les textes directement dans avis.php.
