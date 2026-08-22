@@ -1170,8 +1170,8 @@ function setLang(lang) {
 }
 
 // ── GALERIES DYNAMIQUES ──
-// Charge toutes les images trouvées dans un dossier
-// en listant automatiquement les fichiers disponibles
+// Charge TOUTES les images trouvées dans un dossier, de façon exhaustive
+// (aucune photo n'est ignorée, quel que soit son nom ou son extension)
 function loadGallery(containerId, folder, altPrefix) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -1179,7 +1179,7 @@ function loadGallery(containerId, folder, altPrefix) {
   // Extensions d'images supportées
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
   
-  // Tenter de lister le contenu du dossier
+  // Tenter de lister le contenu du dossier (méthode exhaustive)
   fetch(folder + '/')
     .then(response => {
       if (!response.ok) throw new Error('Dossier non trouvé');
@@ -1204,19 +1204,29 @@ function loadGallery(containerId, folder, altPrefix) {
       
       // Trier les fichiers par ordre naturel
       imageFiles.sort((a, b) => {
-        // Extraire les nombres pour tri naturel
         const aNum = parseInt(a.match(/\d+/)?.[0] || '0');
         const bNum = parseInt(b.match(/\d+/)?.[0] || '0');
         if (aNum !== bNum) return aNum - bNum;
         return a.localeCompare(b);
       });
       
-      // Charger chaque image
       if (imageFiles.length === 0) {
         container.innerHTML = '<p style="color:var(--gold);padding:20px;font-style:italic;opacity:.6">Aucune photo dans le dossier <strong>' + folder + '</strong></p>';
         return;
       }
       
+      // Créer un emplacement réservé pour CHAQUE image dans l'ordre exact,
+      // puis remplir chaque emplacement dès que son image charge.
+      // Cela garantit : (1) exhaustivité — aucune photo n'est sautée,
+      // et (2) ordre stable, indépendant de la vitesse de chargement.
+      const slots = imageFiles.map(() => {
+        const slot = document.createElement('div');
+        slot.style.display = 'contents';
+        container.appendChild(slot);
+        return slot;
+      });
+      
+      let loadedCount = 0;
       imageFiles.forEach((filename, index) => {
         const img = new Image();
         img.onload = function() {
@@ -1225,7 +1235,8 @@ function loadGallery(containerId, folder, altPrefix) {
           el.src = folder + '/' + filename;
           el.alt = altPrefix + ' ' + (index + 1);
           el.onclick = function() { openLightbox(this.src, this.alt); };
-          container.appendChild(el);
+          slots[index].appendChild(el);
+          loadedCount++;
         };
         img.onerror = function() {
           console.log('Erreur chargement:', folder + '/' + filename);
@@ -1234,31 +1245,46 @@ function loadGallery(containerId, folder, altPrefix) {
       });
     })
     .catch(error => {
-      // Fallback: si le listing ne fonctionne pas, essayer le mode legacy (numéros 1, 2, 3...)
+      // Fallback: si le listing ne fonctionne pas, essayer le mode legacy
       console.log('Listing automatique non disponible, passage en mode legacy pour:', folder);
       loadGalleryLegacy(containerId, folder, altPrefix);
     });
 }
 
-// Fonction legacy pour compatibilité (charge 1.jpg, 2.jpg, etc.)
+// Fonction legacy pour compatibilité (numéros 1, 2, 3...)
+// Tolérante aux trous de numérotation pour rester EXHAUSTIVE :
+// si une photo manque (ex: pas de 6.jpg), on continue quand même
+// à chercher 7, 8, 9... au lieu de s'arrêter.
 function loadGalleryLegacy(containerId, folder, altPrefix) {
   const container = document.getElementById(containerId);
   if (!container) return;
   
-  const extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+  const extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg'];
+  const MAX_INDEX = 300;        // plafond de sécurité, largement suffisant
+  const MAX_CONSECUTIVE_MISS = 15; // nb de trous consécutifs tolérés avant d'arrêter
+  let consecutiveMisses = 0;
+  let anyFound = false;
   
   function tryLoad(i) {
+    if (i > MAX_INDEX || consecutiveMisses > MAX_CONSECUTIVE_MISS) {
+      if (!anyFound) {
+        container.innerHTML = '<p style="color:var(--gold);padding:20px;font-style:italic;opacity:.6">Placez vos photos dans le dossier <strong>' + folder + '</strong></p>';
+      }
+      return;
+    }
+    
     let tried = 0;
     let found = false;
     
     extensions.forEach(ext => {
-      if (found) return;
       const src = folder + '/' + i + '.' + ext;
       const img = new Image();
       
       img.onload = function() {
         if (found) return;
         found = true;
+        anyFound = true;
+        consecutiveMisses = 0;
         const el = document.createElement('img');
         el.className = 'gallery-img';
         el.src = src;
@@ -1271,11 +1297,8 @@ function loadGalleryLegacy(containerId, folder, altPrefix) {
       img.onerror = function() {
         tried++;
         if (tried === extensions.length && !found) {
-          // Aucune extension ne fonctionne pour ce numéro
-          if (i === 1) {
-            container.innerHTML = '<p style="color:var(--gold);padding:20px;font-style:italic;opacity:.6">Placez vos photos dans le dossier <strong>' + folder + '</strong></p>';
-          }
-          // Sinon on s'arrête (fin de la série)
+          consecutiveMisses++;
+          tryLoad(i + 1);
         }
       };
       
